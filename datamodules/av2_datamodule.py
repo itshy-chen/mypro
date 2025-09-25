@@ -8,10 +8,12 @@ from datasets.av2_dataset import Av2Dataset, collate_fn
 
 
 class Av2DataModule(LightningDataModule):
+    """Lightning data module that prepares AV2 data splits and shared preprocessing."""
+
     def __init__(
         self,
         data_root: str,
-        dataset: dict = {},
+        dataset: Optional[dict] = None,
         train_batch_size: int = 32,
         test_batch_size: int = 32,
         shuffle: bool = True,
@@ -22,7 +24,7 @@ class Av2DataModule(LightningDataModule):
     ):
         super(Av2DataModule, self).__init__()
         self.data_root = Path(data_root)
-        self.dataset_cfg = dataset
+        self.dataset_cfg = dict(dataset or {})
         self.batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.shuffle = shuffle
