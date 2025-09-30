@@ -1,122 +1,124 @@
-# src/dvfi/models/future/future_encoder.py
 from __future__ import annotations
-from typing import Tuple
-from typing import Optional
+
+from dataclasses import dataclass
+
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
-import math
 
-from modules.future.keypoint import build_kinematics, select_keypoints
+@dataclass
+class NeighbourInfo:
+    """Container storing the output of :func:`future_knn`."""
 
-
-class RMSNorm(nn.Module):
-    def __init__(self, d: int, eps: float = 1e-6):
-        super().__init__()
-        self.weight = nn.Parameter(torch.ones(d))
-        self.eps = eps
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        rms = x.pow(2).mean(dim=1, keepdim=True).add(self.eps).rsqrt()  # channel-first
-        return self.weight.view(1, -1, 1) * x * rms
+    indices: torch.Tensor
+    distances: torch.Tensor
+    mask: torch.Tensor
+    k: int
 
 
-class ConvGLUBlock(nn.Module):
-    def __init__(self, d_model: int, k: int = 5, dilation: int = 1, dropout: float = 0.1):
-        super().__init__()
-        pad = dilation * (k - 1) // 2
-        self.norm = RMSNorm(d_model)
-        self.conv = nn.Conv1d(d_model, 2 * d_model, kernel_size=k, padding=pad, dilation=dilation)
-        self.proj = nn.Conv1d(d_model, d_model, kernel_size=1)
-        self.drop = nn.Dropout(dropout)
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: [N, C, H]
-        h = self.norm(x)
-        h = self.conv(h)
-        a, b = h.chunk(2, dim=1)
-        h = a * torch.sigmoid(b)     # GLU
-        h = self.proj(h)
-        h = self.drop(h)
-        return x + h
+def _summarise_trajectory(Y_abs: torch.Tensor) -> torch.Tensor:
+    """Collapse mode/style dimensions and return ``[B, A, H, 2]`` trajectories."""
+
+    if Y_abs.dim() != 6:
+        raise ValueError("`Y_abs` is expected to be of shape [B, A, K, M, H, 2].")
+    return Y_abs.mean(dim=(2, 3))
 
 
-def sinusoidal_time_embedding(H: int, d_t: int, device=None) -> torch.Tensor:
+def future_knn(
+    Y_abs: torch.Tensor,
+    *,
+    K: int = 16,
+    fallback_k: int = 8,
+    eps: float = 1e-6,
+) -> NeighbourInfo:
+    """Select the ``K`` closest neighbours using Euclidean distance.
+
+    When fewer than ``K`` neighbours are available we reduce the number of
+    neighbours to ``fallback_k`` (or the actual count if smaller).  The function
+    returns indices and distances that can later be used for gathering
+    neighbour-specific information.
     """
-    Returns [d_t, H] sin-cos embedding (channel-first for 1D conv add).
+
+    traj = _summarise_trajectory(Y_abs)
+    B, A, H, _ = traj.shape
+    device = traj.device
+
+    if A <= 1:  # pragma: no cover - degenerate case
+        empty = torch.empty(B, A, 0, device=device, dtype=torch.long)
+        return NeighbourInfo(empty, empty.float(), empty.bool(), 0)
+
+    anchor = traj[..., -1, :]  # [B, A, 2]
+    dist = torch.cdist(anchor, anchor, p=2)
+    dist = dist.clamp_min(eps)
+
+    eye = torch.eye(A, device=device, dtype=torch.bool)
+    dist = dist.masked_fill(eye.unsqueeze(0), float("inf"))
+
+    available = A - 1
+    if available < K:
+        k_eff = min(max(fallback_k, 1), available) if available >= fallback_k else available
+    else:
+        k_eff = K
+
+    if k_eff <= 0:
+        empty = torch.empty(B, A, 0, device=device, dtype=torch.long)
+        return NeighbourInfo(empty, empty.float(), empty.bool(), 0)
+
+    distances, indices = dist.topk(k=k_eff, largest=False)
+    mask = torch.isfinite(distances)
+    distances = distances.masked_fill(~mask, 0.0)
+    return NeighbourInfo(indices=indices, distances=distances, mask=mask, k=k_eff)
+
+
+def _gather_neighbour_trajectories(
+    traj: torch.Tensor, indices: torch.Tensor
+) -> torch.Tensor:
+    """Gather neighbour trajectories according to ``indices``."""
+
+    B, A, H, C = traj.shape
+    _, _, K = indices.shape
+    expanded = traj.unsqueeze(1).expand(B, A, A, H, C)
+    gather_idx = indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, H, C)
+    neighbours = torch.gather(expanded, 2, gather_idx)
+    return neighbours  # [B, A, K, H, C]
+
+
+def geom_soft_prior(
+    Y_abs: torch.Tensor,
+    neighbours: NeighbourInfo,
+    *,
+    temperature: float = 2.0,
+) -> dict:
+    """Compute a geometry-based soft prior over the selected neighbours.
+
+    The bias is derived from the final-step distances between the target agent
+    and each neighbour.  The function returns both the softmax weights and the
+    relative trajectories that can act as additional conditioning features for
+    attention modules.
     """
-    pos = torch.arange(H, device=device).float()  # [H]
-    div = torch.exp(torch.arange(0, d_t, 2, device=device).float() * (-torch.log(torch.tensor(10000.0, device=device)) / d_t))
-    pe = torch.zeros(d_t, H, device=device)
-    pe[0::2, :] = torch.sin(pos.unsqueeze(0) * div.unsqueeze(1))
-    pe[1::2, :] = torch.cos(pos.unsqueeze(0) * div.unsqueeze(1))
-    return pe  # [d_t, H]
 
+    traj = _summarise_trajectory(Y_abs)
+    neigh_traj = _gather_neighbour_trajectories(traj, neighbours.indices)
 
-class FutureEncoder(nn.Module):
-    """
-    Encode absolute future trajectory Y_abs into a compact feature sequence f(t)
-    evaluated at Tk key timestamps. Independent from history SSM.
-    """
-    def __init__(self,
-                 d_in_feats: int = 8,     # from build_kinematics
-                 d_time: int = 32,
-                 d_model: int = 128,
-                 layers: int = 2,
-                 kernel_size: int = 5,
-                 dilations=(1, 2),
-                 dropout: float = 0.1,
-                 Tk: int = 6,
-                 time_embed: str = "sin"):
-        super().__init__()
-        self.Tk = Tk
-        self.time_embed = time_embed
-        self.d_model = d_model
-        self.proj_in = nn.Conv1d(d_in_feats, d_model, kernel_size=1)
-        self.t_proj = nn.Conv1d(d_time, d_model, kernel_size=1)
-        self.blocks = nn.ModuleList([
-            ConvGLUBlock(d_model, k=kernel_size,
-                         dilation=dilations[i % len(dilations)],
-                         dropout=dropout)
-            for i in range(layers)
-        ])
+    target_final = traj[..., -1, :].unsqueeze(2)  # [B, A, 1, 2]
+    neighbour_final = neigh_traj[..., -1, :]  # [B, A, K, 2]
 
-    def forward(self, Y_abs: torch.Tensor, dt: float = 0.1) -> torch.Tensor:
-        """
-        Args:
-          Y_abs: [B, A, K, M, H, 2]
-        Returns:
-          f_seq: [B, A, K, M, Tk, d_model]   # features at Tk key timestamps
-        """
-        device = Y_abs.device
-        B, A, K, M, H, _ = Y_abs.shape
+    rel_final = neighbour_final - target_final
+    logits = -torch.norm(rel_final, dim=-1) / max(temperature, 1e-6)
 
-        # 1) kinematic feats over full H
-        feats = build_kinematics(Y_abs, dt=dt)            # [B,A,K,M,H,8]
-        feats = feats.permute(0,1,2,3,5,4).contiguous()   # [B,A,K,M,8,H]
+    mask = neighbours.mask
+    if mask is not None:
+        logits = logits.masked_fill(~mask, float("-inf"))
 
-        # 2) project to model dim & add time embedding
-        x = feats.view(B * A * K * M, feats.size(-2), H)  # [N, C=8, H]
-        x = self.proj_in(x)                               # [N, d_model, H]
+    weights = F.softmax(logits, dim=-1)
 
-        if self.time_embed == "sin":
-            pe = sinusoidal_time_embedding(H, self.t_proj.in_channels, device=device)  # [d_time, H]
-            pe = self.t_proj(pe.unsqueeze(0)).squeeze(0)                               # [d_model, H]
-            x = x + pe.unsqueeze(0).expand_as(x)
-        else:
-            # 可扩展 learned embedding
-            pass
+    rel_traj = neigh_traj - traj.unsqueeze(2)
 
-        # 3) temporal conv backbone over full H
-        for blk in self.blocks:
-            x = blk(x)                                    # [N, d_model, H]
-
-        # 4) select Tk keypoints & gather
-        idx = select_keypoints(Y_abs, Tk=self.Tk, method="uniform")  # [Tk]
-        # gather along time axis
-        # x: [N, C, H] -> [N, C, Tk]
-        x_k = x.index_select(dim=2, index=idx)            # [N, d_model, Tk]
-
-        # 5) reshape back
-        x_k = x_k.permute(0, 2, 1).contiguous()           # [N, Tk, d_model]
-        f_seq = x_k.view(B, A, K, M, self.Tk, self.d_model)
-        return f_seq
+    return {
+        "weights": weights,
+        "logits": logits,
+        "relative_traj": rel_traj,
+        "indices": neighbours.indices,
+        "mask": mask,
+        "k": neighbours.k,
+    }
