@@ -1,9 +1,12 @@
+from __future__ import annotations
+
+from functools import partial
+import random
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
-from functools import partial
 from torch import Tensor
-from typing import Optional,Tuple
-from __future__ import annotations
 try:  # pragma: no cover - optional dependency probing
     from torch.nn import RMSNorm as TorchRMSNorm  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover - PyTorch < 2.0 fallback
@@ -11,7 +14,6 @@ except ImportError:  # pragma: no cover - PyTorch < 2.0 fallback
 from mamba_ssm.modules.mamba_simple import Mamba
 from mamba_ssm.utils.generation import GenerationMixin
 from mamba_ssm.utils.hf import load_config_hf, load_state_dict_hf
-import random
 try:
     from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
 except ImportError:

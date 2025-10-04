@@ -5,24 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="efb998e3-26ce-4d87-a45b-ca793587a082" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/loss/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/loss/bon.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/loss/cic.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/loss/intent_loss.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/loss/safety.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/loss/score_calib.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/interaction/behavior_prior.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules/interaction/cross-attention.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/eval.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/train.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/train/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/train/evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/mypro.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/mypro.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/future/future_encoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/future/future_encoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/layers/mamba.py" beforeDir="false" afterPath="$PROJECT_DIR$/layers/mamba.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modules/interaction/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/interaction/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/interaction/geometry.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/interaction/geometry.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train/train_loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/train/train_loop.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,19 +36,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/python/Repetition-trajectory prediction/mypro&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/python/Repetition-trajectory prediction/mypro",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\python\Repetition-trajectory prediction\mypro" />
@@ -83,7 +70,8 @@
       <workItem from="1758638897972" duration="18596000" />
       <workItem from="1758943410674" duration="1317000" />
       <workItem from="1759024975972" duration="12375000" />
-      <workItem from="1759118058235" duration="6137000" />
+      <workItem from="1759118058235" duration="9041000" />
+      <workItem from="1759587719035" duration="1044000" />
     </task>
     <servers />
   </component>
