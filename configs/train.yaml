@@ -1,0 +1,90 @@
+data:
+  root: "/mnt/d/data/av2-test.small"
+  batch_size: 64
+  num_workers: 8
+  pin_memory: true
+  splits:
+    train: 0.8
+    val: 0.1
+    test: 0.1
+
+model:
+  name: vectornet
+  type: trajectory_forecaster
+  hidden_dim: 256
+  encoder:
+    type: polyline_encoder
+    layers: 3
+    dropout: 0.1
+  decoder:
+    type: intention_decoder
+    horizon: 30
+    num_modes: 6
+  map_encoder:
+    type: lane_gnn
+    hidden_dim: 128
+    layers: 2
+  intent_module:
+    type: goal_classifier
+    hidden_dim: 128
+    temperature: 0.5
+
+loss:
+  main:
+    weight: 1.0
+  best_of_n:
+    weight: 0.5
+    k: 6
+  intention_supervision:
+    weight: 0.2
+
+optimizer:
+  type: adamw
+  lr: 1.0e-3
+  weight_decay: 1.0e-2
+  betas: [0.9, 0.999]
+
+scheduler:
+  type: cosine_annealing_warm_restarts
+  T_0: 10
+  T_mult: 2
+  eta_min: 1.0e-5
+
+trainer:
+  max_epochs: 120
+  precision: 16
+  devices: 1
+  accelerator: gpu
+  strategy: auto
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 2
+
+logging:
+  logger: tensorboard
+  log_dir: logs/
+  log_every_n_steps: 50
+
+checkpoint:
+  dirpath: checkpoints/
+  monitor: val/loss
+  mode: min
+  save_top_k: 3
+  every_n_epochs: 1
+
+callbacks:
+  - type: learning_rate_monitor
+    logging_interval: step
+  - type: model_summary
+    max_depth: 2
+
+seed: 42
+run:
+  run_name: base_vectornet
+  output_dir: outputs/
+
+debug:
+  deterministic: true
+  fast_dev_run: false
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  limit_test_batches: 1.0

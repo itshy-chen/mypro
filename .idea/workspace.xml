@@ -5,10 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="efb998e3-26ce-4d87-a45b-ca793587a082" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/--config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/--data-root" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/train.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/configs/train.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/train_av2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/mypro.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/mypro.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/layers/mamba.py" beforeDir="false" afterPath="$PROJECT_DIR$/layers/mamba.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/interaction/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/interaction/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train/train_loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/train/train_loop.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/train.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,6 +44,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "WebServerToolWindowFactoryState": "false",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "D:/python/Repetition-trajectory prediction/mypro",
@@ -58,6 +64,13 @@
       <recent name="D:\python\Repetition-trajectory prediction\mypro\layers" />
     </key>
   </component>
+  <component name="RunManager">
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.train" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="默认任务">
@@ -71,7 +84,7 @@
       <workItem from="1758943410674" duration="1317000" />
       <workItem from="1759024975972" duration="12375000" />
       <workItem from="1759118058235" duration="9041000" />
-      <workItem from="1759587719035" duration="1044000" />
+      <workItem from="1759587719035" duration="7932000" />
     </task>
     <servers />
   </component>
