@@ -1,5 +1,6 @@
 """Layer modules package."""
 
+from .ifp_encoder import IFPencoder
 from .mamba import (
     AttentionPooling,
     FFNBlock,
@@ -12,6 +13,7 @@ from .mamba import (
 __all__ = [
     "AttentionPooling",
     "FFNBlock",
+    "IFPencoder",
     "MambaBlock",
     "MambaTimeEncoder",
     "RMSNorm",

@@ -138,7 +138,18 @@ def instantiate_spec(
         spec_dict = dict(spec)
         target = spec_dict.pop("target", None)
         if target is None:
-            raise ValueError("Mapping specifications must provide a 'target' key")
+            # ``type``/``class`` style keys are common in older configuration
+            # files.  Accept them as aliases for ``target`` so that legacy
+            # configs keep working.
+            for alias in ("type", "class", "cls", "callable", "factory"):
+                target = spec_dict.pop(alias, None)
+                if target is not None:
+                    break
+        if target is None:
+            raise ValueError(
+                "Mapping specifications must provide a 'target' key (or one of"
+                " the supported aliases: type/class/cls/callable/factory)"
+            )
         target_fn = resolve_target(target)
         spec_args = list(spec_dict.pop("args", []))
         spec_kwargs = dict(spec_dict.pop("kwargs", {}))
